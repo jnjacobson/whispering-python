@@ -8,12 +8,14 @@
 #     "pynput",
 #     "pyperclip",
 #     "pyautogui",
+#     "python-dotenv",
 # ]
 # ///
 
 import io
 import threading
 import argparse
+import os
 
 import sounddevice as sd
 import numpy as np
@@ -22,6 +24,10 @@ from pydub import AudioSegment
 from pynput import keyboard
 import pyperclip
 import pyautogui
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Parse command line arguments
 parser = argparse.ArgumentParser(description='Speech to text recording tool')
@@ -40,7 +46,12 @@ HOTKEY = "<ctrl>+<alt>+;"
 SAMPLE_RATE = 16000
 CHANNELS = 1
 MAX_RECORDING_SECONDS = 120
-OPENAI_API_KEY = "sk-proj-1234567890"
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+# Check if API key is set
+if not OPENAI_API_KEY:
+    print("Error: OPENAI_API_KEY environment variable not set.")
+    exit(1)
 
 # Display selected language
 print(f"Using language: {LANGUAGE}")
@@ -109,14 +120,13 @@ def transcribe_audio():
             model="whisper-1",
             file=("audio.wav", byte_io),
             language=LANGUAGE,
-            response_format="text",
         )
 
         # Save original clipboard content
         original_clipboard = pyperclip.paste()
 
         # Copy and paste transcription
-        pyperclip.copy(result)
+        pyperclip.copy(result.text)
         pyautogui.hotkey('ctrl', 'v')
 
         # Restore original clipboard content
