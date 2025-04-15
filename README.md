@@ -3,7 +3,13 @@ Python script to transcribe speech to text using OpenAI's Whisper.
 
 ## Setup
 
-### Setup OpenAI API key
+### Clone the repository
+
+```bash
+git clone https://github.com/jnjacobson/whispering-python.git
+```
+
+### Add your OpenAI API key
 
 Clone the `.env.dist` file to `.env` and add your OpenAI API key.
 
@@ -11,7 +17,7 @@ Clone the `.env.dist` file to `.env` and add your OpenAI API key.
 cp .env.dist .env
 ```
 
-### Install UV
+### Install uv
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
