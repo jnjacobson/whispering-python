@@ -42,7 +42,7 @@ args = parser.parse_args()
 
 # Recording parameters
 LANGUAGE = args.language
-HOTKEY = "<ctrl>+<alt>+;"
+HOTKEY = os.getenv("HOTKEY")
 SAMPLE_RATE = 16000
 CHANNELS = 1
 MAX_RECORDING_SECONDS = 120

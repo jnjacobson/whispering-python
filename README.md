@@ -32,5 +32,5 @@ uv run script.py
 The default language is German.
 
 ```bash
-uv run script.py --language en
+uv run script.py --l en
 ```
