@@ -30,7 +30,7 @@ sudo apt install libportaudio2 ffmpeg python3-tk python3-dev
 ## Usage
 
 ```bash
-uv run script.py
+uv run main.py
 ```
 
 ### Pass language code as argument
@@ -38,5 +38,5 @@ uv run script.py
 The default language is German.
 
 ```bash
-uv run script.py --l en
+uv run main.py --l en
 ```
