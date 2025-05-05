@@ -42,15 +42,15 @@ args = parser.parse_args()
 
 # Recording parameters
 LANGUAGE = args.language
-HOTKEY = os.getenv("HOTKEY")
 SAMPLE_RATE = 16000
 CHANNELS = 1
 MAX_RECORDING_SECONDS = 120
+HOTKEY = os.getenv("HOTKEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # Check if API key is set
-if not OPENAI_API_KEY:
-    print("Error: OPENAI_API_KEY environment variable not set.")
+if not OPENAI_API_KEY or not HOTKEY:
+    print("Error: OPENAI_API_KEY or HOTKEY environment variable not set.")
     exit(1)
 
 # Display selected language
@@ -117,7 +117,7 @@ def transcribe_audio():
         byte_io.seek(0)
 
         result = client.audio.transcriptions.create(
-            model="whisper-1",
+            model="gpt-4o-mini-transcribe",
             file=("audio.wav", byte_io),
             language=LANGUAGE,
         )
