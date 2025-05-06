@@ -1,5 +1,5 @@
 # whispering-python
-Python script to transcribe speech to text using OpenAI's Whisper.
+Python script to transcribe speech to text using OpenAI's transcription API.
 
 ## Setup
 
@@ -31,12 +31,4 @@ sudo apt install libportaudio2 ffmpeg python3-tk python3-dev
 
 ```bash
 uv run main.py
-```
-
-### Pass language code as argument
-
-The default language is German.
-
-```bash
-uv run main.py --l en
 ```

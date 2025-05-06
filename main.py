@@ -14,7 +14,6 @@
 
 import io
 import threading
-import argparse
 import os
 
 import sounddevice as sd
@@ -29,22 +28,11 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-# Parse command line arguments
-parser = argparse.ArgumentParser(description='Speech to text recording tool')
-parser.add_argument(
-    '--language',
-    '-l',
-    type=str,
-    default="de",
-    help='Language code for transcription (default: de)',
-)
-args = parser.parse_args()
-
 # Recording parameters
-LANGUAGE = args.language
 SAMPLE_RATE = 16000
 CHANNELS = 1
 MAX_RECORDING_SECONDS = 120
+
 HOTKEY = os.getenv("HOTKEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
@@ -53,14 +41,12 @@ if not OPENAI_API_KEY or not HOTKEY:
     print("Error: OPENAI_API_KEY or HOTKEY environment variable not set.")
     exit(1)
 
-# Display selected language
-print(f"Using language: {LANGUAGE}")
-
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 
 # Recording state class
 class RecordingState:
+    """Manages the state of audio recording including frames and timer."""
     def __init__(self):
         self.is_recording = False
         self.recorded_frames = []
@@ -118,8 +104,7 @@ def transcribe_audio():
 
         result = client.audio.transcriptions.create(
             model="gpt-4o-mini-transcribe",
-            file=("audio.wav", byte_io),
-            language=LANGUAGE,
+            file=("audio.wav", byte_io)
         )
 
         # Save original clipboard content
