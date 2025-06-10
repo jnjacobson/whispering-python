@@ -9,6 +9,7 @@
 #     "pyperclip",
 #     "pyautogui",
 #     "python-dotenv",
+#     "assemblyai",
 # ]
 # ///
 
@@ -24,6 +25,7 @@ from pynput import keyboard
 import pyperclip
 import pyautogui
 from dotenv import load_dotenv
+import assemblyai as aai
 
 # Load environment variables from .env file
 load_dotenv()
@@ -36,13 +38,14 @@ MAX_RECORDING_SECONDS = 120
 HOTKEY = os.getenv("HOTKEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
+aai.settings.api_key = os.getenv("ASSEMBLYAI_API_KEY")
+
 # Check if API key is set
 if not OPENAI_API_KEY or not HOTKEY:
     print("Error: OPENAI_API_KEY or HOTKEY environment variable not set.")
     exit(1)
 
-client = OpenAI(api_key=OPENAI_API_KEY)
-
+openai_client = OpenAI(api_key=OPENAI_API_KEY)
 
 # Recording state class
 class RecordingState:
@@ -77,47 +80,82 @@ def on_key_press():
         print("Press Ctrl+Alt+; to start recording again.")
 
 
+def get_audio_file():
+    """Get the audio file from the recorded frames."""
+    # Combine all recorded frames
+    audio_data = np.concatenate(state.recorded_frames)
+
+    # Convert to int16 for proper audio format
+    audio_int16 = (audio_data * np.iinfo(np.int16).max).astype(np.int16)
+
+    # Create an in-memory file-like object
+    byte_io = io.BytesIO()
+
+    # Create a temporary audio segment
+    AudioSegment(
+        audio_int16.tobytes(),
+        frame_rate=SAMPLE_RATE,
+        sample_width=2,
+        channels=CHANNELS,
+    ).export(byte_io, format="wav")
+
+    byte_io.seek(0)
+
+    return byte_io
+
+
 def transcribe_audio():
     """Transcribe the recorded audio."""
+    if not state.recorded_frames:
+        return
+
+    if os.getenv("TRANSCRIPTION_SERVICE") == "openai":
+        result = transcribe_openai()
+    else:
+        result = transcribe_assemblyai()
+
+    # Save original clipboard content
+    original_clipboard = pyperclip.paste()
+
+    # Copy and paste transcription
+    pyperclip.copy(result)
+    pyautogui.hotkey('ctrl', 'v')
+
+    # Restore original clipboard content
+    pyperclip.copy(original_clipboard)
+
+
+def transcribe_openai():
+    """Transcribe the recorded audio using OpenAI."""
     try:
-        # Combine all recorded frames
-        if not state.recorded_frames:
-            return
-
-        audio_data = np.concatenate(state.recorded_frames)
-
-        # Convert to int16 for proper audio format
-        audio_int16 = (audio_data * np.iinfo(np.int16).max).astype(np.int16)
-
-        # Create an in-memory file-like object
-        byte_io = io.BytesIO()
-
-        # Create a temporary audio segment
-        AudioSegment(
-            audio_int16.tobytes(),
-            frame_rate=SAMPLE_RATE,
-            sample_width=2,
-            channels=CHANNELS,
-        ).export(byte_io, format="wav")
-
-        byte_io.seek(0)
-
-        result = client.audio.transcriptions.create(
+        result = openai_client.audio.transcriptions.create(
             model="gpt-4o-mini-transcribe",
-            file=("audio.wav", byte_io)
+            file=("audio.wav", get_audio_file())
         )
-
-        # Save original clipboard content
-        original_clipboard = pyperclip.paste()
-
-        # Copy and paste transcription
-        pyperclip.copy(result.text)
-        pyautogui.hotkey('ctrl', 'v')
-
-        # Restore original clipboard content
-        pyperclip.copy(original_clipboard)
+        return result.text
     except Exception as e:
         print(f"Error in transcription: {str(e)}")
+        return
+
+
+def transcribe_assemblyai():
+    """Transcribe the recorded audio using AssemblyAI."""
+
+    config = aai.TranscriptionConfig(
+        speech_model="universal",
+        language_code="de",
+    )
+
+    try:
+        transcript = aai.Transcriber().transcribe(get_audio_file(), config)
+
+        if (transcript.status == "error"):
+            raise Exception(transcript.error)
+
+        return transcript.text
+    except Exception as e:
+        print(f"Error in transcription: {str(e)}")
+        return
 
 
 def audio_callback(indata, frames, time_info, status):
