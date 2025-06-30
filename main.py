@@ -78,7 +78,7 @@ def on_key_press():
             state.timer = None
 
         transcribe_audio()
-        print("Press Ctrl+Alt+; to start recording again.")
+        print("\nPress Ctrl+Alt+; to start recording again.")
 
 
 def get_audio_file():
@@ -129,7 +129,7 @@ def transcribe_audio():
     # Copy and paste transcription
     pyperclip.copy(result)
     pyautogui.hotkey('ctrl', 'v')
-    time.sleep(0.2)  # Increased delay for better reliability
+    time.sleep(0.2)  # wait for content to be pasted
 
     # Restore original clipboard content
     pyperclip.copy(original_clipboard)
