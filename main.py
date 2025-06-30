@@ -26,6 +26,7 @@ import pyperclip
 import pyautogui
 from dotenv import load_dotenv
 import assemblyai as aai
+import time
 
 # Load environment variables from .env file
 load_dotenv()
@@ -107,6 +108,7 @@ def get_audio_file():
 def transcribe_audio():
     """Transcribe the recorded audio."""
     if not state.recorded_frames:
+        print("No audio recorded.")
         return
 
     if os.getenv("TRANSCRIPTION_SERVICE") == "openai":
@@ -114,12 +116,20 @@ def transcribe_audio():
     else:
         result = transcribe_assemblyai()
 
+    # Check if transcription was successful
+    if not result or not result.strip():
+        print("Transcription failed or returned empty text.")
+        return
+
+    print(f"Transcribed: {result}")
+
     # Save original clipboard content
     original_clipboard = pyperclip.paste()
 
     # Copy and paste transcription
     pyperclip.copy(result)
     pyautogui.hotkey('ctrl', 'v')
+    time.sleep(0.2)  # Increased delay for better reliability
 
     # Restore original clipboard content
     pyperclip.copy(original_clipboard)
@@ -134,8 +144,8 @@ def transcribe_openai():
         )
         return result.text
     except Exception as e:
-        print(f"Error in transcription: {str(e)}")
-        return
+        print(f"Error in OpenAI transcription: {str(e)}")
+        return None
 
 
 def transcribe_assemblyai():
@@ -154,8 +164,8 @@ def transcribe_assemblyai():
 
         return transcript.text
     except Exception as e:
-        print(f"Error in transcription: {str(e)}")
-        return
+        print(f"Error in AssemblyAI transcription: {str(e)}")
+        return None
 
 
 def audio_callback(indata, frames, time_info, status):
