@@ -124,7 +124,11 @@ def transcribe_audio():
     print(f"Transcribed: {result}")
 
     # Save original clipboard content
-    original_clipboard = pyperclip.paste()
+    try:
+        original_clipboard = pyperclip.paste()
+    except Exception as e:
+        print(f"Error in getting original clipboard: {str(e)}")
+        original_clipboard = ""
 
     # Copy and paste transcription
     pyperclip.copy(result)
