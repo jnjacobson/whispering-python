@@ -1,32 +1,34 @@
 # /// script
 # requires-python = ">=3.11"
 # dependencies = [
-#     "sounddevice",
+#     "assemblyai",
 #     "numpy",
 #     "openai",
+#     "print-color",
+#     "pyautogui",
+#     "pyperclip",
 #     "pydub",
 #     "pynput",
-#     "pyperclip",
-#     "pyautogui",
 #     "python-dotenv",
-#     "assemblyai",
+#     "sounddevice",
 # ]
 # ///
 
 import io
-import threading
 import os
+import threading
+import time
 
-import sounddevice as sd
+import assemblyai as aai
 import numpy as np
+import pyautogui
+import pyperclip
+import sounddevice as sd
+from dotenv import load_dotenv
 from openai import OpenAI
+from print_color import print
 from pydub import AudioSegment
 from pynput import keyboard
-import pyperclip
-import pyautogui
-from dotenv import load_dotenv
-import assemblyai as aai
-import time
 
 # Load environment variables from .env file
 load_dotenv()
@@ -48,6 +50,7 @@ if not OPENAI_API_KEY or not HOTKEY:
 
 openai_client = OpenAI(api_key=OPENAI_API_KEY)
 
+
 # Recording state class
 class RecordingState:
     """Manages the state of audio recording including frames and timer."""
@@ -66,19 +69,25 @@ def on_key_press():
     state.is_recording = not state.is_recording
 
     if state.is_recording:
-        print(f"Recording started... Press {HOTKEY} to stop.")
+        print("\x1b[2K\r", end="")
+        print("Recording started... Press ", end="")
+        print(HOTKEY, end="", color="cyan")
+        print(" to stop.", end="\r",)
         state.recorded_frames = []  # Clear previous recordings
         state.timer = threading.Timer(MAX_RECORDING_SECONDS, on_key_press)
         state.timer.start()
     else:
-        print("Recording stopped. Transcribing...")
+        print("\x1b[2K\r", end="")
+        print("Recording stopped. Transcribing...", end="\r")
         # Cancel the timer if manually stopped
         if state.timer and state.timer.is_alive():
             state.timer.cancel()
             state.timer = None
 
         transcribe_audio()
-        print("\nPress Ctrl+Alt+; to start recording again.")
+        print("Ready. Press ", end="")
+        print(HOTKEY, end="", color="cyan")
+        print(" to start/stop recording.", end="\r")
 
 
 def get_audio_file():
@@ -118,16 +127,17 @@ def transcribe_audio():
 
     # Check if transcription was successful
     if not result or not result.strip():
-        print("Transcription failed or returned empty text.")
+        print("Transcription failed or returned empty text.", color="red")
         return
 
-    print(f"Transcribed: {result}")
+    print("\x1b[2K\r", end="")
+    print(f"\"{result}\"", color="green")
 
     # Save original clipboard content
     try:
         original_clipboard = pyperclip.paste()
     except Exception as e:
-        print(f"Error in getting original clipboard: {str(e)}")
+        print(f"Error in getting original clipboard: {str(e)}", color="red")
         original_clipboard = ""
 
     # Copy and paste transcription
@@ -148,7 +158,7 @@ def transcribe_openai():
         )
         return result.text
     except Exception as e:
-        print(f"Error in OpenAI transcription: {str(e)}")
+        print(f"Error in OpenAI transcription: {str(e)}", color="red")
         return None
 
 
@@ -168,14 +178,14 @@ def transcribe_assemblyai():
 
         return transcript.text
     except Exception as e:
-        print(f"Error in AssemblyAI transcription: {str(e)}")
+        print(f"Error in AssemblyAI transcription: {str(e)}", color="red")
         return None
 
 
 def audio_callback(indata, frames, time_info, status):
     """Callback function to capture audio data."""
     if status:
-        print(status)
+        print(status, color="red")
     if state.is_recording:
         state.recorded_frames.append(indata.copy())
 
@@ -192,7 +202,9 @@ def setup_hotkey():
         on_press=hotkey.press,
         on_release=hotkey.release,
     ) as listener:
-        print(f"Ready. Press {HOTKEY} to start/stop recording.")
+        print("Ready. Press ", end="")
+        print(HOTKEY, end="", color="cyan")
+        print(" to start/stop recording.", end="\r")
         listener.join()
 
 
@@ -208,7 +220,7 @@ stream.start()
 try:
     setup_hotkey()
 except KeyboardInterrupt:
-    print("\nStopping the program...")
+    print("\nBye!")
 finally:
     if stream.active:
         stream.stop()
