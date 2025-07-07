@@ -133,7 +133,7 @@ def transcribe_audio():
         return
 
     print("\x1b[2K\r", end="")
-    print(f"{time.time() - state.start_time:.2f}s", color="yellow", end="")
+    print(f"{time.time() - state.start_time:.2f}s ", color="yellow", end="")
     print(f"\"{result}\"", color="green")
 
     # Save original clipboard content
