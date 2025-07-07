@@ -58,6 +58,7 @@ class RecordingState:
         self.is_recording = False
         self.recorded_frames = []
         self.timer = None
+        self.start_time = None
 
 
 state = RecordingState()
@@ -76,6 +77,7 @@ def on_key_press():
         state.recorded_frames = []  # Clear previous recordings
         state.timer = threading.Timer(MAX_RECORDING_SECONDS, on_key_press)
         state.timer.start()
+        state.start_time = time.time()
     else:
         print("\x1b[2K\r", end="")
         print("Recording stopped. Transcribing...", end="\r")
@@ -131,6 +133,7 @@ def transcribe_audio():
         return
 
     print("\x1b[2K\r", end="")
+    print(f"{time.time() - state.start_time:.2f}s", color="yellow", end="")
     print(f"\"{result}\"", color="green")
 
     # Save original clipboard content
